@@ -8,6 +8,7 @@ POSTS_FILE = sys.argv[1]
 
 def transform_comments(graph, post_id):
     PAGE_ID = post_id.split("_")[0]
+    results = []
 
     # @todo: add 'since' so we download only data from last week (?)
     for comment in graph.get_all_connections(post_id, 'comments', filter='stream', fields='id,created_time,permalink_url,from,parent{id},message,like_count', order='reverse_chronological'):
@@ -33,11 +34,14 @@ def transform_comments(graph, post_id):
         scomment['react_like'] = comment['like_count']
         ## @note: copy output of socwatch
         scomment['sentiment'] = 'missing'
-        return scomment
+        results.append(scomment)
+
+    return results
 
 graph = facebook.GraphAPI(access_token=PAGE_TOKEN)
 
 with open(POSTS_FILE) as json_file:
     data = json.load(json_file)
     for post in data['data']:
-        print (json.dumps(transform_comments(graph, post['id'])))
+        for comment in transform_comments(graph, post['id']):
+            print (json.dumps(comment))
